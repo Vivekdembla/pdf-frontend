@@ -214,7 +214,9 @@ function App() {
             {downloadLink && (
               <a
                 href={downloadLink}
-                download
+                onClick={() => {
+                  setDownloadLink("");
+                }}
                 className="w-full max-w-md bg-gray-100 text-gray-800 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
               >
                 <Download className="w-5 h-5" />
