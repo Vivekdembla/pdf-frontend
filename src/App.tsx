@@ -15,20 +15,20 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0]);
-      setError("");
-    }
-  }, []);
+  // const onDrop = useCallback((acceptedFiles: File[]) => {
+  //   if (acceptedFiles.length > 0) {
+  //     setFile(acceptedFiles[0]);
+  //     setError("");
+  //   }
+  // }, []);
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop,
-    accept: {
-      "application/pdf": [".pdf"],
-    },
-    maxFiles: 1,
-  });
+  // const { getRootProps, getInputProps } = useDropzone({
+  //   onDrop,
+  //   accept: {
+  //     "application/pdf": [".pdf"],
+  //   },
+  //   maxFiles: 1,
+  // });
 
   const uploadTemplate = async () => {
     if (!file) return;
@@ -104,10 +104,45 @@ function App() {
     }
   };
 
+  const [input, setInput] = useState("");
+  const generateTemplate = async () => {
+    setIsLoading(true);
+    setError("");
+    let dataa = input;
+    console.log(input, "aaaaaa");
+    placeholders.forEach((key) => {
+      dataa = dataa.split(key).join(`{{${key}}}`);
+    });
+    console.log(dataa, "ssss");
+    try {
+      const response = await fetch("http://localhost:5001/generate-template", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input: dataa,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Generation failed");
+      }
+
+      const data = await response.json();
+      setDownloadLink(data.downloadPath);
+    } catch (err) {
+      setError("Failed to generate PDF. Please try again.");
+      console.error("Generation error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
       <div className="max-w-2xl mx-auto space-y-8">
-        {/* Header */}
+        {/* Header
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">
             PDF Template Generator
@@ -115,7 +150,7 @@ function App() {
           <p className="mt-2 text-gray-600">
             Upload your PDF template and fill in the placeholders
           </p>
-        </div>
+        </div> */}
 
         {/* Error Message */}
         {error && (
@@ -125,7 +160,7 @@ function App() {
         )}
 
         {/* Upload Section */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        {/* <div className="bg-white rounded-xl shadow-md p-6">
           <div
             {...getRootProps()}
             className="border-2 border-dashed border-blue-300 rounded-lg p-8 transition-colors hover:border-blue-400 cursor-pointer bg-blue-50 hover:bg-blue-100"
@@ -157,48 +192,49 @@ function App() {
               </>
             )}
           </button>
-        </div>
+        </div> */}
 
         {/* Placeholders Section */}
-        {placeholders.length > 0 && (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="text-gray-600" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                Fill Placeholders
-              </h2>
-            </div>
-            <div className="space-y-4">
-              {placeholders.map((key) => (
-                <div key={key} className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-700 mb-1">
-                    {key}:
-                  </label>
-                  <input
-                    type="text"
-                    value={fields[key] || ""}
-                    onChange={(e) =>
-                      setFields({ ...fields, [key]: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder={`Enter ${key}`}
-                  />
-                </div>
-              ))}
-            </div>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="text-gray-600" />
+            <h2 className="text-xl font-semibold text-gray-900">
+              Fill Placeholders
+            </h2>
           </div>
-        )}
+          <div className="space-y-4">
+            {/* {placeholders.map((key) => ( */}
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Add Text:
+            </label>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">
+                Add Placeholders:
+              </label>
+              <input
+                type="text"
+                value={placeholders.join(",")}
+                onChange={(e) => setPlaceholders(e.target.value.split(","))}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Name,Address,DOB"
+              />
+            </div>
+            {/* ))} */}
+          </div>
+        </div>
 
         {/* Generate and Download Section */}
-        {placeholders.length > 0 && (
+        {
           <div className="flex flex-col items-center gap-4">
             <button
-              disabled={
-                !fileLocation ||
-                isLoading ||
-                Object.values(fields).some((v) => !v)
-              }
-              onClick={generatePDF}
+              // disabled={!fileLocation || isLoading}
+              onClick={generateTemplate}
               className="w-full max-w-md bg-green-600 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
             >
               {isLoading ? (
@@ -224,7 +260,7 @@ function App() {
               </a>
             )}
           </div>
-        )}
+        }
       </div>
     </div>
   );
